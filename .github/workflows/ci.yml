@@ -49,7 +49,9 @@ jobs:
           cache: maven
 
       - name: Run API tests
-        run: ./mvnw -B verify
+        run: |
+          chmod +x mvnw
+          ./mvnw -B verify
 
   web:
     name: Web
