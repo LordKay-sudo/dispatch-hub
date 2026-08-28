@@ -35,7 +35,30 @@ Multi-tenant notification / webhook dispatcher take-home (WIP).
    npm start
    ```
 
-Actuator health: `http://localhost:8080/actuator/health` (once the API is up and security is configured for local use).
+Actuator health: `http://localhost:8080/actuator/health`
+
+OpenAPI: `http://localhost:8080/swagger-ui.html`
+
+## Demo users
+
+Password for all demo accounts: `password`
+
+| Username | Tenant | Role |
+|----------|--------|------|
+| `admin.acme` | `acme` | ADMIN |
+| `viewer.acme` | `acme` | VIEWER |
+| `admin.beta` | `beta` | ADMIN |
+| `viewer.beta` | `beta` | VIEWER |
+
+Login:
+
+```bash
+curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"admin.acme\",\"password\":\"password\",\"tenantCode\":\"acme\"}"
+```
+
+Use the returned `accessToken` as `Authorization: Bearer …` on `/api/v1/tenants/**`.
 
 ## Security notes
 
