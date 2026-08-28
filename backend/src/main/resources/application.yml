@@ -1,0 +1,25 @@
+﻿spring:
+  application:
+    name: dispatch-hub-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB:dispatch_hub}
+    username: ${POSTGRES_USER:dispatch}
+    password: ${POSTGRES_PASSWORD:changeme}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+server:
+  port: 8080
