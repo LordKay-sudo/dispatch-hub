@@ -12,6 +12,12 @@
   flyway:
     enabled: true
 
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:change-me-to-a-long-random-string-at-least-32-chars}
+      ttl: 8h
+
 management:
   endpoints:
     web:
@@ -23,3 +29,9 @@ management:
 
 server:
   port: 8080
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
