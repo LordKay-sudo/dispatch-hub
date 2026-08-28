@@ -36,3 +36,16 @@ Multi-tenant notification / webhook dispatcher take-home (WIP).
    ```
 
 Actuator health: `http://localhost:8080/actuator/health` (once the API is up and security is configured for local use).
+
+## Security notes
+
+Webhook destinations are checked in two steps (see [docs/decisions.md](docs/decisions.md) ADR-001):
+
+1. **Global deny** — block private, loopback, link-local, and cloud metadata addresses (after DNS resolution).
+2. **Per-tenant allowlist** — only hosts/CIDRs configured for that tenant may be used.
+
+Local/demo profiles may allow `localhost` for WireMock and manual tests. Do not put secrets in git; use `.env` from `.env.example`.
+
+## Design decisions
+
+Rationale for Java version, async delivery without a broker, caching, and SSRF layering: [docs/decisions.md](docs/decisions.md).
