@@ -1,10 +1,10 @@
-﻿# Dispatch Hub
+# Dispatch Hub
 
 Multi-tenant notification / webhook dispatcher take-home (WIP).
 
 ## Stack
 
-- **API:** Spring Boot 4.1.1 (`dispatch-hub-api`), Java 21 (highest JDK on this machine; start.spring.io also offers 25/26)
+- **API:** Spring Boot 4.1.1 (`dispatch-hub-api`), Java 25 LTS (Spring Boot 4.1 supports 21-26; LTS chosen for support/deployability)
 - **Web:** Angular 22 (`dispatch-hub-web`)
 - **DB:** PostgreSQL 16 via Docker Compose
 
