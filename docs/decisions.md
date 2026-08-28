@@ -46,3 +46,13 @@ Short records of choices that affect security, ops, or review. Implementation ma
 **Decision:** Spring Cache + **Caffeine** on the API JVM. Authoritative delivery state remains in Postgres.
 
 **Why:** No extra process on a small VPS. Multi-node strict rate limits would move to Redis later; document that upgrade path.
+
+## ADR-005: CI on every pull request
+
+**Status:** Accepted
+
+**Context:** Milestone work should be reviewable with automated checks before merge.
+
+**Decision:** GitHub Actions workflow runs API tests (JDK 25 + Postgres service) and a web production build (Node 22) on pull requests and pushes to `master`.
+
+**Why:** Catches breakages early without a local-only ritual. Heavier suites (Testcontainers matrix, Playwright) can join the same workflow later.

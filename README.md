@@ -46,6 +46,13 @@ Webhook destinations are checked in two steps (see [docs/decisions.md](docs/deci
 
 Local/demo profiles may allow `localhost` for WireMock and manual tests. Do not put secrets in git; use `.env` from `.env.example`.
 
+## CI
+
+Pull requests and pushes to `master` run GitHub Actions (`.github/workflows/ci.yml`):
+
+- **API:** Temurin JDK 25, Postgres 16 service, `./mvnw verify`
+- **Web:** Node 22, `npm ci` and `npm run build`
+
 ## Design decisions
 
 Rationale for Java version, async delivery without a broker, caching, and SSRF layering: [docs/decisions.md](docs/decisions.md).
