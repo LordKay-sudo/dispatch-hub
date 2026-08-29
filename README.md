@@ -58,7 +58,16 @@ curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -d "{\"username\":\"admin.acme\",\"password\":\"password\",\"tenantCode\":\"acme\"}"
 ```
 
-Use the returned `accessToken` as `Authorization: Bearer …` on `/api/v1/tenants/**`.
+Use the returned `accessToken` as `Authorization: Bearer …` on tenant APIs.
+
+### Destinations and events
+
+- `POST /api/v1/tenants/{tenantId}/destinations` (ADMIN) — create webhook destination
+- `POST /api/v1/tenants/{tenantId}/events` (ADMIN) — submit event with `idempotencyKey` + JSON `payload`; enqueues delivery jobs
+- `GET /api/v1/tenants/{tenantId}/events/{eventId}` — event + job statuses
+- `GET /api/v1/tenants/{tenantId}/jobs/{jobId}/attempts` — delivery attempts
+
+Dispatch runs on a scheduled DB outbox poller (`FOR UPDATE SKIP LOCKED`), no message broker.
 
 ## Security notes
 

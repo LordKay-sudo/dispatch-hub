@@ -3,7 +3,9 @@
 .env.*
 !.env.example
 **/application-local.yml
+**/application-local.properties
 **/application-secret.yml
+**/application-secret.properties
 *.pem
 *.p12
 *.jks

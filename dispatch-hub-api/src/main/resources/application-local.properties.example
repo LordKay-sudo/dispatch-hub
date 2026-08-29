@@ -1,0 +1,6 @@
+# Copy to application-local.properties (gitignored) for local overrides.
+# Never put real secrets here in a committed file.
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/dispatch_hub
+spring.datasource.username=dispatch
+spring.datasource.password=changeme
