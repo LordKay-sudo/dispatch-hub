@@ -4,7 +4,7 @@ Short records of choices that affect security, ops, or review. Implementation ma
 
 ## ADR-001: Outbound URL checks use global deny then tenant allowlist
 
-**Status:** Accepted (to implement with destinations / dispatch)
+**Status:** Accepted (implemented)
 
 **Context:** Destinations accept webhook URLs. Arbitrary URLs invite SSRF (cloud metadata, link-local, internal RFC1918). Tenants must also not call each other’s hosts or arbitrary public endpoints outside their egress policy.
 
@@ -56,3 +56,24 @@ Short records of choices that affect security, ops, or review. Implementation ma
 **Decision:** GitHub Actions workflow runs API tests (JDK 25 + Postgres service) and a web production build (Node 22) on pull requests and pushes to `master`.
 
 **Why:** Catches breakages early without a local-only ritual. Heavier suites (Testcontainers matrix, Playwright) can join the same workflow later.
+
+## ADR-006: Spring AI without Embabel or shared memory
+
+**Status:** Accepted
+
+**Context:** The brief needs a small failure summarizer, not a multi-step agent.
+
+**Decision:** Use **Spring AI** behind a provider interface. No Embabel. No cross-tenant chat memory — each summarize call is stateless with sanitized, tenant-owned attempt metadata only.
+
+**Why:** Matches scoring expectations with less complexity. Tenant isolation is enforced by input scope, not by a shared memory store.
+
+## ADR-007: Retry backoff then DEAD (demo DLQ)
+
+**Status:** Accepted
+
+**Context:** Failed webhooks need retries and a terminal state.
+
+**Decision:** Exponential backoff via `next_run_at` on the outbox row; after `app.dispatch.max-attempts`, mark **DEAD**. Manual `POST .../jobs/{id}/retry` requeues FAILED/DEAD for ADMIN.
+
+**Why:** Keeps DLQ semantics in Postgres without a broker.
+

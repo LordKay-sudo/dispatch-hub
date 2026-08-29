@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class OutboxClaimRepository {
@@ -16,6 +17,7 @@ public class OutboxClaimRepository {
 		this.jdbcTemplate = jdbcTemplate;
 	}
 
+	@Transactional
 	public List<UUID> claimPending(String workerId, int batchSize) {
 		String sql = """
 				WITH picked AS (
@@ -52,6 +54,33 @@ public class OutboxClaimRepository {
 				""", attemptCount, jobId);
 	}
 
+	public void scheduleRetry(UUID jobId, int attemptCount, String error, Instant nextRunAt) {
+		jdbcTemplate.update("""
+				UPDATE delivery_job
+				SET status = 'PENDING',
+				    attempt_count = ?,
+				    last_error = ?,
+				    next_run_at = ?,
+				    locked_at = NULL,
+				    locked_by = NULL,
+				    updated_at = NOW()
+				WHERE id = ?
+				""", attemptCount, error, Timestamp.from(nextRunAt), jobId);
+	}
+
+	public void markDead(UUID jobId, int attemptCount, String error) {
+		jdbcTemplate.update("""
+				UPDATE delivery_job
+				SET status = 'DEAD',
+				    attempt_count = ?,
+				    last_error = ?,
+				    locked_at = NULL,
+				    locked_by = NULL,
+				    updated_at = NOW()
+				WHERE id = ?
+				""", attemptCount, error, jobId);
+	}
+
 	public void markFailed(UUID jobId, int attemptCount, String error) {
 		jdbcTemplate.update("""
 				UPDATE delivery_job
@@ -63,6 +92,19 @@ public class OutboxClaimRepository {
 				    updated_at = NOW()
 				WHERE id = ?
 				""", attemptCount, error, jobId);
+	}
+
+	public void requeue(UUID jobId) {
+		jdbcTemplate.update("""
+				UPDATE delivery_job
+				SET status = 'PENDING',
+				    next_run_at = NOW(),
+				    last_error = NULL,
+				    locked_at = NULL,
+				    locked_by = NULL,
+				    updated_at = NOW()
+				WHERE id = ?
+				""", jobId);
 	}
 
 	public void insertAttempt(UUID attemptId, UUID tenantId, UUID jobId, int attemptNumber, Integer httpStatus,

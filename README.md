@@ -67,7 +67,11 @@ Use the returned `accessToken` as `Authorization: Bearer …` on tenant APIs.
 - `GET /api/v1/tenants/{tenantId}/events/{eventId}` — event + job statuses
 - `GET /api/v1/tenants/{tenantId}/jobs/{jobId}/attempts` — delivery attempts
 
-Dispatch runs on a scheduled DB outbox poller (`FOR UPDATE SKIP LOCKED`), no message broker.
+- `POST /api/v1/tenants/{tenantId}/jobs/{jobId}/retry` (ADMIN) — requeue FAILED/DEAD jobs
+
+Dispatch runs on a scheduled DB outbox poller (`FOR UPDATE SKIP LOCKED`), with exponential backoff and a terminal **DEAD** state after max attempts. No message broker.
+
+Destination URLs are checked on create/update and again at dispatch (global SSRF deny, then per-tenant egress allowlist). Demo tenants allow `localhost` / `127.0.0.1`; set `SSRF_ALLOW_LOOPBACK=false` for stricter local resolution rules.
 
 ## Security notes
 
