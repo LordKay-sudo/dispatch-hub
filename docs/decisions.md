@@ -77,3 +77,15 @@ Short records of choices that affect security, ops, or review. Implementation ma
 
 **Why:** Keeps DLQ semantics in Postgres without a broker.
 
+## ADR-008: JPA for domain CRUD, Spring Data JDBC for outbox claims
+
+**Status:** Accepted
+
+**Context:** Most entities are ordinary CRUD. Outbox claiming needs `FOR UPDATE SKIP LOCKED` and `UPDATE … RETURNING`, which do not fit JPA cleanly. Plain `JdbcTemplate` works but bypasses the Spring Data repository model we want for JDBC paths.
+
+**Decision:**
+- **JPA** — tenants, users, memberships, destinations, events, delivery job/attempt reads and normal writes.
+- **Spring Data JDBC** — outbox claim and status transitions in `com.lordkay.dispatchhub.dispatch` (`OutboxClaimRepository` + custom fragment). Use `NamedParameterJdbcTemplate` inside that fragment for the SKIP LOCKED SQL; do not introduce ad-hoc plain-JDBC repositories elsewhere.
+
+**Why:** Keeps domain mapping on JPA while giving the poller an explicit Spring Data JDBC boundary. Separate `@EnableJpaRepositories` / `@EnableJdbcRepositories` base packages avoid dual scanning.
+
