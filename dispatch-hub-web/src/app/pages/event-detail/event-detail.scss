@@ -1,0 +1,41 @@
+.meta-card,
+.job-card {
+  margin-bottom: 1.25rem;
+  background: #fff;
+}
+
+.payload {
+  background: #eef2f7;
+  padding: 0.75rem;
+  border-radius: 4px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.ai-box {
+  border-left: 3px solid var(--accent);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: #eef6fc;
+}
+
+.provider {
+  font-size: 0.85rem;
+  color: #4a5b6c;
+}
+
+.full-table {
+  width: 100%;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}

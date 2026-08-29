@@ -1,0 +1,100 @@
+<div class="page">
+  <p><a routerLink="/app/events">← Back to events</a></p>
+
+  @if (loading()) {
+    <div class="center"><mat-spinner diameter="36"></mat-spinner></div>
+  } @else if (event(); as ev) {
+    <h1>Event detail</h1>
+    <mat-card class="meta-card">
+      <mat-card-content>
+        <p><strong>Id:</strong> <span class="mono">{{ ev.id }}</span></p>
+        <p><strong>Idempotency key:</strong> <span class="mono">{{ ev.idempotencyKey }}</span></p>
+        <p><strong>Created:</strong> {{ ev.createdAt | date: 'medium' }}</p>
+        <p><strong>Payload</strong></p>
+        <pre class="mono payload">{{ ev.payload }}</pre>
+      </mat-card-content>
+    </mat-card>
+
+    <h2>Jobs</h2>
+    @for (view of jobViews(); track view.job.id; let i = $index) {
+      <mat-card class="job-card">
+        <mat-card-header>
+          <mat-card-title>Job {{ view.job.id }}</mat-card-title>
+          <mat-card-subtitle>
+            Status: {{ view.job.status }} · Destination: {{ view.job.destinationId }} · Attempts:
+            {{ view.job.attemptCount }}
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="actions">
+            @if (auth.isAdmin) {
+              <button
+                mat-stroked-button
+                color="primary"
+                type="button"
+                (click)="retry(i)"
+                [disabled]="view.retrying"
+              >
+                Retry
+              </button>
+            }
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              (click)="aiSummary(i)"
+              [disabled]="view.loadingSummary"
+            >
+              AI Summary
+            </button>
+          </div>
+
+          @if (view.summary; as s) {
+            <div class="ai-box">
+              <span class="ai-label">AI-generated</span>
+              <p><strong>Explanation</strong></p>
+              <p>{{ s.explanation }}</p>
+              <p><strong>Suggested action</strong></p>
+              <p>{{ s.suggestedAction }}</p>
+              @if (s.provider) {
+                <p class="provider">Provider: {{ s.provider }}</p>
+              }
+            </div>
+          }
+
+          <h3>Attempts</h3>
+          @if (view.loadingAttempts) {
+            <mat-spinner diameter="28"></mat-spinner>
+          } @else {
+            <table mat-table [dataSource]="view.attempts" class="mat-elevation-z0 full-table">
+              <ng-container matColumnDef="attemptNumber">
+                <th mat-header-cell *matHeaderCellDef>#</th>
+                <td mat-cell *matCellDef="let row">{{ row.attemptNumber }}</td>
+              </ng-container>
+              <ng-container matColumnDef="httpStatus">
+                <th mat-header-cell *matHeaderCellDef>HTTP</th>
+                <td mat-cell *matCellDef="let row">{{ row.httpStatus ?? '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="durationMs">
+                <th mat-header-cell *matHeaderCellDef>Duration (ms)</th>
+                <td mat-cell *matCellDef="let row">{{ row.durationMs }}</td>
+              </ng-container>
+              <ng-container matColumnDef="errorMessage">
+                <th mat-header-cell *matHeaderCellDef>Error</th>
+                <td mat-cell *matCellDef="let row">{{ row.errorMessage || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="createdAt">
+                <th mat-header-cell *matHeaderCellDef>Created</th>
+                <td mat-cell *matCellDef="let row">{{ row.createdAt | date: 'medium' }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="attemptColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: attemptColumns"></tr>
+            </table>
+          }
+        </mat-card-content>
+      </mat-card>
+    } @empty {
+      <p>No delivery jobs for this event.</p>
+    }
+  }
+</div>

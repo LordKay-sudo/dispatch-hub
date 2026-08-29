@@ -1,0 +1,13 @@
+<mat-toolbar color="primary" class="top-bar">
+  <span class="toolbar-brand">Dispatch Hub</span>
+  <a mat-button routerLink="/app/events" routerLinkActive="active-link">Events</a>
+  <a mat-button routerLink="/app/destinations" routerLinkActive="active-link">Destinations</a>
+  <span class="spacer"></span>
+  @if (auth.username()) {
+    <span class="user-meta">{{ auth.username() }} · {{ auth.role() }}</span>
+  }
+  <button mat-button type="button" (click)="logout()">Logout</button>
+</mat-toolbar>
+<main class="shell-main">
+  <router-outlet />
+</main>
