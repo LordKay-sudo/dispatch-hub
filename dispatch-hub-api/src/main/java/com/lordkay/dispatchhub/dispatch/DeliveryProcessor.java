@@ -4,8 +4,10 @@ import com.lordkay.dispatchhub.delivery.DeliveryJob;
 import com.lordkay.dispatchhub.delivery.DeliveryJobRepository;
 import com.lordkay.dispatchhub.destination.Destination;
 import com.lordkay.dispatchhub.destination.DestinationRepository;
+import com.lordkay.dispatchhub.destination.DestinationUrlValidator;
 import com.lordkay.dispatchhub.event.InboundEvent;
 import com.lordkay.dispatchhub.event.InboundEventRepository;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,15 +20,22 @@ public class DeliveryProcessor {
 	private final InboundEventRepository inboundEventRepository;
 	private final OutboxClaimRepository outboxClaimRepository;
 	private final WebhookClient webhookClient;
+	private final DestinationUrlValidator destinationUrlValidator;
+	private final DestinationRateLimiter rateLimiter;
+	private final RetryBackoff retryBackoff;
 
 	public DeliveryProcessor(DeliveryJobRepository deliveryJobRepository, DestinationRepository destinationRepository,
 			InboundEventRepository inboundEventRepository, OutboxClaimRepository outboxClaimRepository,
-			WebhookClient webhookClient) {
+			WebhookClient webhookClient, DestinationUrlValidator destinationUrlValidator,
+			DestinationRateLimiter rateLimiter, RetryBackoff retryBackoff) {
 		this.deliveryJobRepository = deliveryJobRepository;
 		this.destinationRepository = destinationRepository;
 		this.inboundEventRepository = inboundEventRepository;
 		this.outboxClaimRepository = outboxClaimRepository;
 		this.webhookClient = webhookClient;
+		this.destinationUrlValidator = destinationUrlValidator;
+		this.rateLimiter = rateLimiter;
+		this.retryBackoff = retryBackoff;
 	}
 
 	@Transactional
@@ -38,7 +47,21 @@ public class DeliveryProcessor {
 		Destination destination = destinationRepository.findById(job.getDestinationId()).orElse(null);
 		InboundEvent event = inboundEventRepository.findById(job.getEventId()).orElse(null);
 		if (destination == null || event == null) {
-			outboxClaimRepository.markFailed(jobId, job.getAttemptCount() + 1, "Missing destination or event");
+			outboxClaimRepository.markDead(jobId, job.getAttemptCount() + 1, "Missing destination or event");
+			return;
+		}
+
+		try {
+			destinationUrlValidator.requireAllowedUrl(job.getTenantId(), destination.getTargetUrl());
+		}
+		catch (RuntimeException ex) {
+			outboxClaimRepository.markDead(jobId, job.getAttemptCount() + 1, "SSRF check failed: " + ex.getMessage());
+			return;
+		}
+
+		if (!rateLimiter.tryAcquire(job.getTenantId(), destination.getId())) {
+			outboxClaimRepository.scheduleRetry(jobId, job.getAttemptCount(), "Rate limited",
+					Instant.now().plusSeconds(30));
 			return;
 		}
 
@@ -50,10 +73,16 @@ public class DeliveryProcessor {
 
 		if (result.success()) {
 			outboxClaimRepository.markSuccess(jobId, attemptNumber);
+			return;
+		}
+
+		String error = result.errorMessage() != null ? result.errorMessage() : "Delivery failed";
+		if (retryBackoff.shouldRetry(attemptNumber)) {
+			Instant next = Instant.now().plus(retryBackoff.delayAfterAttempt(attemptNumber));
+			outboxClaimRepository.scheduleRetry(jobId, attemptNumber, error, next);
 		}
 		else {
-			outboxClaimRepository.markFailed(jobId, attemptNumber,
-					result.errorMessage() != null ? result.errorMessage() : "Delivery failed");
+			outboxClaimRepository.markDead(jobId, attemptNumber, error);
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package com.lordkay.dispatchhub.destination;
 
 import com.lordkay.dispatchhub.common.ApiException;
+import com.lordkay.dispatchhub.config.CacheConfig;
 import com.lordkay.dispatchhub.destination.dto.CreateDestinationRequest;
 import com.lordkay.dispatchhub.destination.dto.DestinationResponse;
 import com.lordkay.dispatchhub.destination.dto.UpdateDestinationRequest;
@@ -8,6 +9,7 @@ import com.lordkay.dispatchhub.security.TenantGuard;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,10 +41,11 @@ public class DestinationService {
 	}
 
 	@Transactional
+	@CacheEvict(cacheNames = CacheConfig.DESTINATIONS, allEntries = true)
 	public DestinationResponse create(UUID tenantId, CreateDestinationRequest request) {
 		tenantGuard.requireTenantId(tenantId);
 		tenantGuard.requireAdmin();
-		String url = urlValidator.requireHttpUrl(request.targetUrl());
+		String url = urlValidator.requireAllowedUrl(tenantId, request.targetUrl());
 		if (destinationRepository.existsByTenantIdAndNameIgnoreCase(tenantId, request.name().trim())) {
 			throw new ApiException(HttpStatus.CONFLICT, "Destination name already exists for this tenant");
 		}
@@ -53,6 +56,7 @@ public class DestinationService {
 	}
 
 	@Transactional
+	@CacheEvict(cacheNames = CacheConfig.DESTINATIONS, allEntries = true)
 	public DestinationResponse update(UUID tenantId, UUID destinationId, UpdateDestinationRequest request) {
 		tenantGuard.requireTenantId(tenantId);
 		tenantGuard.requireAdmin();
@@ -61,7 +65,7 @@ public class DestinationService {
 			destination.setName(request.name().trim());
 		}
 		if (request.targetUrl() != null && !request.targetUrl().isBlank()) {
-			destination.setTargetUrl(urlValidator.requireHttpUrl(request.targetUrl()));
+			destination.setTargetUrl(urlValidator.requireAllowedUrl(tenantId, request.targetUrl()));
 		}
 		if (request.secret() != null) {
 			destination.setSecret(blankToNull(request.secret()));
@@ -74,6 +78,7 @@ public class DestinationService {
 	}
 
 	@Transactional
+	@CacheEvict(cacheNames = CacheConfig.DESTINATIONS, allEntries = true)
 	public void delete(UUID tenantId, UUID destinationId) {
 		tenantGuard.requireTenantId(tenantId);
 		tenantGuard.requireAdmin();
