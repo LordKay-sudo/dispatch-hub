@@ -5,6 +5,7 @@ Multi-tenant notification / webhook dispatcher take-home (WIP).
 ## Stack
 
 - **API:** Spring Boot 4.1.1 (`dispatch-hub-api`), Java 25 LTS
+- **Persistence:** JPA for domain CRUD; Spring Data JDBC for outbox claim / SKIP LOCKED (see [ADR-008](docs/decisions.md))
 - **Web:** Angular 22 (`dispatch-hub-web`)
 - **DB:** PostgreSQL 16 via Docker Compose
 
