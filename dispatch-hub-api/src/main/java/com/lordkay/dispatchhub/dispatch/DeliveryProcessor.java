@@ -23,11 +23,12 @@ public class DeliveryProcessor {
 	private final DestinationUrlValidator destinationUrlValidator;
 	private final DestinationRateLimiter rateLimiter;
 	private final RetryBackoff retryBackoff;
+	private final DispatchMetrics dispatchMetrics;
 
 	public DeliveryProcessor(DeliveryJobRepository deliveryJobRepository, DestinationRepository destinationRepository,
 			InboundEventRepository inboundEventRepository, OutboxClaimRepository outboxClaimRepository,
 			WebhookClient webhookClient, DestinationUrlValidator destinationUrlValidator,
-			DestinationRateLimiter rateLimiter, RetryBackoff retryBackoff) {
+			DestinationRateLimiter rateLimiter, RetryBackoff retryBackoff, DispatchMetrics dispatchMetrics) {
 		this.deliveryJobRepository = deliveryJobRepository;
 		this.destinationRepository = destinationRepository;
 		this.inboundEventRepository = inboundEventRepository;
@@ -36,6 +37,7 @@ public class DeliveryProcessor {
 		this.destinationUrlValidator = destinationUrlValidator;
 		this.rateLimiter = rateLimiter;
 		this.retryBackoff = retryBackoff;
+		this.dispatchMetrics = dispatchMetrics;
 	}
 
 	@Transactional
@@ -48,6 +50,7 @@ public class DeliveryProcessor {
 		InboundEvent event = inboundEventRepository.findById(job.getEventId()).orElse(null);
 		if (destination == null || event == null) {
 			outboxClaimRepository.markDead(jobId, job.getAttemptCount() + 1, "Missing destination or event");
+			dispatchMetrics.dead();
 			return;
 		}
 
@@ -56,12 +59,14 @@ public class DeliveryProcessor {
 		}
 		catch (RuntimeException ex) {
 			outboxClaimRepository.markDead(jobId, job.getAttemptCount() + 1, "SSRF check failed: " + ex.getMessage());
+			dispatchMetrics.dead();
 			return;
 		}
 
 		if (!rateLimiter.tryAcquire(job.getTenantId(), destination.getId())) {
 			outboxClaimRepository.scheduleRetry(jobId, job.getAttemptCount(), "Rate limited",
 					Instant.now().plusSeconds(30));
+			dispatchMetrics.rateLimited();
 			return;
 		}
 
@@ -73,6 +78,7 @@ public class DeliveryProcessor {
 
 		if (result.success()) {
 			outboxClaimRepository.markSuccess(jobId, attemptNumber);
+			dispatchMetrics.success();
 			return;
 		}
 
@@ -80,9 +86,11 @@ public class DeliveryProcessor {
 		if (retryBackoff.shouldRetry(attemptNumber)) {
 			Instant next = Instant.now().plus(retryBackoff.delayAfterAttempt(attemptNumber));
 			outboxClaimRepository.scheduleRetry(jobId, attemptNumber, error, next);
+			dispatchMetrics.retry();
 		}
 		else {
 			outboxClaimRepository.markDead(jobId, attemptNumber, error);
+			dispatchMetrics.dead();
 		}
 	}
 }

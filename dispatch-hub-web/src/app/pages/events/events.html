@@ -2,6 +2,17 @@
   <h1>Events</h1>
   <p>Inbound events and delivery jobs for this tenant.</p>
 
+  @if (summary(); as s) {
+    <div class="ops-strip" aria-label="Delivery summary">
+      <span>Total {{ s.totalJobs }}</span>
+      <span>Pending {{ s.pending }}</span>
+      <span>Running {{ s.running }}</span>
+      <span>Success {{ s.success }}</span>
+      <span>Failed {{ s.failed }}</span>
+      <span>Dead {{ s.dead }}</span>
+    </div>
+  }
+
   <mat-card class="create-card">
     <mat-card-header>
       <mat-card-title>Submit event</mat-card-title>

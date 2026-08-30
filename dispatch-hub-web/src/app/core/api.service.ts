@@ -72,6 +72,15 @@ export interface FailureSummary {
   provider: string;
 }
 
+export interface OpsSummary {
+  totalJobs: number;
+  pending: number;
+  running: number;
+  success: number;
+  failed: number;
+  dead: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
@@ -125,5 +134,10 @@ export class ApiService {
       `${this.base}/api/v1/tenants/${tenantId}/jobs/${jobId}/ai-summary`,
       {},
     );
+  }
+
+  opsSummary(): Observable<OpsSummary> {
+    const tenantId = this.auth.requireTenantId();
+    return this.http.get<OpsSummary>(`${this.base}/api/v1/tenants/${tenantId}/ops-summary`);
   }
 }

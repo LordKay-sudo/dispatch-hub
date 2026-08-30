@@ -10,4 +10,8 @@ public interface DeliveryJobRepository extends JpaRepository<DeliveryJob, UUID> 
 	List<DeliveryJob> findByTenantIdAndEventIdOrderByCreatedAtAsc(UUID tenantId, UUID eventId);
 
 	Optional<DeliveryJob> findByIdAndTenantId(UUID id, UUID tenantId);
+
+	long countByTenantIdAndStatus(UUID tenantId, DeliveryJobStatus status);
+
+	long countByTenantId(UUID tenantId);
 }
