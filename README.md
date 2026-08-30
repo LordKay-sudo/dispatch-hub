@@ -125,3 +125,24 @@ PRs/pushes to `master`: JDK 25 + Postgres API tests; Node 22 web build.
 ## Tools used
 
 Cursor (agent-assisted implementation and reviews). All submitted code was reviewed and is expected to be explainable/modifiable in a live demo.
+
+## Submission
+
+Git tag for the review build: **`submission`** (points at the final master commit for this assessment).
+
+Checklist for reviewers:
+
+- [x] Working API + Angular UI
+- [x] Flyway migrations + demo seed users
+- [x] JWT auth with ADMIN / VIEWER
+- [x] Async outbox dispatch (no message broker)
+- [x] SSRF + tenant egress allowlist
+- [x] Retries / DEAD + manual retry
+- [x] AI failure summarizer (mock by default)
+- [x] Automated API tests in CI + web build
+- [x] OpenAPI / Swagger UI
+- [x] Docker Compose for Postgres
+- [x] `.env.example` only (no committed secrets)
+- [x] Architecture + decision docs
+
+To run a local demo after clone: follow **Setup**, log in as `admin.acme` / `password` / tenant `acme`, create a destination pointing at a reachable allowlisted host (`localhost` / `127.0.0.1` in demo), submit an event, watch job attempts, optionally call AI summary.
