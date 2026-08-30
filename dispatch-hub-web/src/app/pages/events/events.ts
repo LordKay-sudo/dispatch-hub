@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { ApiService, Destination, EventRecord } from '../../core/api.service';
+import { ApiService, Destination, EventRecord, OpsSummary } from '../../core/api.service';
 
 @Component({
   selector: 'app-events',
@@ -39,6 +39,7 @@ export class EventsPage implements OnInit {
   readonly submitting = signal(false);
   readonly rows = signal<EventRecord[]>([]);
   readonly destinations = signal<Destination[]>([]);
+  readonly summary = signal<OpsSummary | null>(null);
   readonly columns = ['createdAt', 'idempotencyKey', 'jobs', 'actions'];
 
   idempotencyKey = '';
@@ -66,6 +67,10 @@ export class EventsPage implements OnInit {
           duration: 4000,
         });
       },
+    });
+    this.api.opsSummary().subscribe({
+      next: (s) => this.summary.set(s),
+      error: () => this.summary.set(null),
     });
   }
 

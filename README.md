@@ -1,13 +1,14 @@
 # Dispatch Hub
 
-Multi-tenant notification / webhook dispatcher take-home (WIP).
+Multi-tenant notification / webhook dispatcher take-home.
 
 ## Stack
 
 - **API:** Spring Boot 4.1.1 (`dispatch-hub-api`), Java 25 LTS
 - **Persistence:** JPA for domain CRUD; Spring Data JDBC for outbox claim / SKIP LOCKED (see [ADR-008](docs/decisions.md))
-- **Web:** Angular 22 (`dispatch-hub-web`)
+- **Web:** Angular 22 + Material (`dispatch-hub-web`)
 - **DB:** PostgreSQL 16 via Docker Compose
+- **AI:** Spring AI 2 (OpenAI optional; mock default)
 
 ## Setup
 
@@ -36,9 +37,13 @@ Multi-tenant notification / webhook dispatcher take-home (WIP).
    npm start
    ```
 
-Actuator health: `http://localhost:8080/actuator/health`
-
-OpenAPI: `http://localhost:8080/swagger-ui.html`
+| Link | URL |
+|------|-----|
+| Health | http://localhost:8080/actuator/health |
+| Metrics | http://localhost:8080/actuator/metrics |
+| Prometheus | http://localhost:8080/actuator/prometheus |
+| OpenAPI | http://localhost:8080/swagger-ui.html |
+| Web UI | http://localhost:4200 |
 
 ## Demo users
 
@@ -61,37 +66,62 @@ curl -s -X POST http://localhost:8080/api/v1/auth/login \
 
 Use the returned `accessToken` as `Authorization: Bearer …` on tenant APIs.
 
-### Destinations and events
+### Main APIs
 
-- `POST /api/v1/tenants/{tenantId}/destinations` (ADMIN) — create webhook destination
-- `POST /api/v1/tenants/{tenantId}/events` (ADMIN) — submit event with `idempotencyKey` + JSON `payload`; enqueues delivery jobs
-- `GET /api/v1/tenants/{tenantId}/events/{eventId}` — event + job statuses
-- `GET /api/v1/tenants/{tenantId}/jobs/{jobId}/attempts` — delivery attempts
+- `POST /api/v1/tenants/{tenantId}/destinations` (ADMIN)
+- `POST /api/v1/tenants/{tenantId}/events` (ADMIN) — idempotency key + payload
+- `GET /api/v1/tenants/{tenantId}/events/{eventId}`
+- `GET /api/v1/tenants/{tenantId}/jobs/{jobId}/attempts`
+- `POST /api/v1/tenants/{tenantId}/jobs/{jobId}/retry` (ADMIN)
+- `POST /api/v1/tenants/{tenantId}/jobs/{jobId}/ai-summary`
+- `GET /api/v1/tenants/{tenantId}/ops-summary` — job counts by status
 
-- `POST /api/v1/tenants/{tenantId}/jobs/{jobId}/ai-summary` — AI failure summarizer (sanitized metadata only; default provider `mock`)
+Set `AI_PROVIDER=mock|openai` (default `mock`). With `openai`, set `OPENAI_API_KEY`. No Embabel; no shared AI memory across tenants.
 
-Set `AI_PROVIDER=mock|openai` (default `mock`). With `mock` (CI/local), a deterministic local summarizer is used and OpenAI chat autoconfig is off (`spring.ai.model.chat` follows `AI_PROVIDER`). With `openai`, also set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`) to use Spring AI + OpenAI. No Embabel; no shared AI memory across tenants.
+Dispatch uses a DB outbox poller (`FOR UPDATE SKIP LOCKED`), exponential backoff, and terminal **DEAD**. No message broker in the demo.
 
-Dispatch runs on a scheduled DB outbox poller (`FOR UPDATE SKIP LOCKED`), with exponential backoff and a terminal **DEAD** state after max attempts. No message broker.
+## Tests
 
-Destination URLs are checked on create/update and again at dispatch (global SSRF deny, then per-tenant egress allowlist). Demo tenants allow `localhost` / `127.0.0.1`; set `SSRF_ALLOW_LOOPBACK=false` for stricter local resolution rules.
+```bash
+# API (needs Postgres on localhost:5432 — use docker compose)
+cd dispatch-hub-api && ./mvnw verify
+
+# Web unit smoke
+cd dispatch-hub-web && npm test -- --run
+```
+
+CI runs the same API verify + web build on every PR. Playwright end-to-end against a full stack is documented as a follow-up (happy-path: login → event → attempt); not required in default CI.
 
 ## Security notes
 
-Webhook destinations are checked in two steps (see [docs/decisions.md](docs/decisions.md) ADR-001):
+See [ADR-001](docs/decisions.md): global SSRF deny, then per-tenant egress allowlist. Demo allowlists include `localhost` / `127.0.0.1`. Never commit secrets.
 
-1. **Global deny** — block private, loopback, link-local, and cloud metadata addresses (after DNS resolution).
-2. **Per-tenant allowlist** — only hosts/CIDRs configured for that tenant may be used.
+## Observability
 
-Local/demo profiles may allow `localhost` for WireMock and manual tests. Do not put secrets in git; use `.env` from `.env.example`.
+- `X-Request-Id` on responses (generated if missing)
+- Micrometer counters: `dispatchhub.delivery.success|retry|dead|rate_limited`
+- Actuator `health`, `metrics`, `prometheus` (scrape on VPS; Grafana optional)
+
+## Production readiness (short)
+
+| Topic | Demo | Next step on VPS |
+|-------|------|------------------|
+| Async | DB outbox | RabbitMQ/SQS workers |
+| Rate limits | Caffeine | Redis |
+| Scale | One API+worker JVM | Stateless API replicas + shared claim SQL |
+| Secrets | `.env` | Docker/OS secrets + TLS via Nginx |
+| Backup | Compose volume | `pg_dump` / snapshots |
+| AI | Mock or OpenAI key | Budget alerts + stricter redaction |
+
+## Architecture & decisions
+
+- [docs/architecture.md](docs/architecture.md)
+- [docs/decisions.md](docs/decisions.md)
 
 ## CI
 
-Pull requests and pushes to `master` run GitHub Actions (`.github/workflows/ci.yml`):
+PRs/pushes to `master`: JDK 25 + Postgres API tests; Node 22 web build.
 
-- **API:** Temurin JDK 25, Postgres 16 service, `./mvnw verify`
-- **Web:** Node 22, `npm ci` and `npm run build`
+## Tools used
 
-## Design decisions
-
-Rationale for Java version, async delivery without a broker, caching, and SSRF layering: [docs/decisions.md](docs/decisions.md).
+Cursor (agent-assisted implementation and reviews). All submitted code was reviewed and is expected to be explainable/modifiable in a live demo.
