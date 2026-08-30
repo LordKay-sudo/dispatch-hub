@@ -1,0 +1,25 @@
+.top-bar {
+  background: var(--accent) !important;
+  color: #fff !important;
+}
+
+.top-bar a,
+.top-bar button,
+.user-meta {
+  color: #fff;
+}
+
+.active-link {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.user-meta {
+  margin-right: 0.75rem;
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.shell-main {
+  min-height: calc(100vh - 64px);
+  background: var(--surface);
+}

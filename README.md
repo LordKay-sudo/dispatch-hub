@@ -68,7 +68,9 @@ Use the returned `accessToken` as `Authorization: Bearer …` on tenant APIs.
 - `GET /api/v1/tenants/{tenantId}/events/{eventId}` — event + job statuses
 - `GET /api/v1/tenants/{tenantId}/jobs/{jobId}/attempts` — delivery attempts
 
-- `POST /api/v1/tenants/{tenantId}/jobs/{jobId}/retry` (ADMIN) — requeue FAILED/DEAD jobs
+- `POST /api/v1/tenants/{tenantId}/jobs/{jobId}/ai-summary` — AI failure summarizer (sanitized metadata only; default provider `mock`)
+
+Set `AI_PROVIDER=mock|openai` (default `mock`). With `mock` (CI/local), a deterministic local summarizer is used and OpenAI chat autoconfig is off (`spring.ai.model.chat` follows `AI_PROVIDER`). With `openai`, also set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`) to use Spring AI + OpenAI. No Embabel; no shared AI memory across tenants.
 
 Dispatch runs on a scheduled DB outbox poller (`FOR UPDATE SKIP LOCKED`), with exponential backoff and a terminal **DEAD** state after max attempts. No message broker.
 

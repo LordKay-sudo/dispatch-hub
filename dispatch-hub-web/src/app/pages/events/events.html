@@ -1,0 +1,63 @@
+<div class="page">
+  <h1>Events</h1>
+  <p>Inbound events and delivery jobs for this tenant.</p>
+
+  <mat-card class="create-card">
+    <mat-card-header>
+      <mat-card-title>Submit event</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Idempotency key</mat-label>
+          <input matInput [(ngModel)]="idempotencyKey" name="idempotencyKey" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Destination (optional)</mat-label>
+          <mat-select [(ngModel)]="destinationId" name="destinationId">
+            <mat-option value="">All destinations</mat-option>
+            @for (d of destinations(); track d.id) {
+              <mat-option [value]="d.id">{{ d.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>JSON payload</mat-label>
+        <textarea matInput rows="6" [(ngModel)]="payloadText" name="payloadText" class="mono"></textarea>
+      </mat-form-field>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-flat-button color="primary" type="button" (click)="submit()" [disabled]="submitting()">
+        Submit event
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  @if (loading()) {
+    <div class="center"><mat-spinner diameter="36"></mat-spinner></div>
+  } @else {
+    <table mat-table [dataSource]="rows()" class="mat-elevation-z1 full-table">
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>Created</th>
+        <td mat-cell *matCellDef="let row">{{ row.createdAt | date: 'medium' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="idempotencyKey">
+        <th mat-header-cell *matHeaderCellDef>Idempotency key</th>
+        <td mat-cell *matCellDef="let row" class="mono">{{ row.idempotencyKey }}</td>
+      </ng-container>
+      <ng-container matColumnDef="jobs">
+        <th mat-header-cell *matHeaderCellDef>Jobs</th>
+        <td mat-cell *matCellDef="let row">{{ row.jobs?.length || 0 }}</td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row">
+          <a mat-button color="primary" [routerLink]="['/app/events', row.id]">Detail</a>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+  }
+</div>

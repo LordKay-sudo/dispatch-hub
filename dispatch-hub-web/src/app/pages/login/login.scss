@@ -1,0 +1,23 @@
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--surface);
+}
+
+mat-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.full {
+  width: 100%;
+  display: block;
+  margin-top: 0.75rem;
+}
+
+mat-card-actions button {
+  min-width: 6rem;
+}
