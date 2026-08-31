@@ -1,0 +1,25 @@
+# Used when building with -f Dockerfile.runtime (host-built JAR).
+# Do NOT ignore target/ — that directory holds the JAR to COPY.
+.idea/
+*.iml
+.git/
+.gitignore
+*.md
+.env
+.env.*
+application-local.properties
+*.log
+src/
+.mvn/
+mvnw
+mvnw.cmd
+pom.xml
+Dockerfile
+target/*.jar.original
+target/classes/
+target/generated-sources/
+target/generated-test-sources/
+target/maven-archiver/
+target/maven-status/
+target/surefire-reports/
+target/test-classes/
