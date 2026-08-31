@@ -64,15 +64,16 @@ class DestinationAndOutboxIntegrationTest {
 		String token = login("admin.acme", "password", "acme");
 		String targetUrl = "http://127.0.0.1:" + webhookPort + "/hook";
 
+		String destinationName = "local-hook-" + UUID.randomUUID();
 		MvcResult destinationResult = mockMvc
 			.perform(post("/api/v1/tenants/" + ACME_ID + "/destinations")
 				.header("Authorization", "Bearer " + token)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-						{"name":"local-hook","targetUrl":"%s","enabled":true}
-						""".formatted(targetUrl)))
+						{"name":"%s","targetUrl":"%s","enabled":true}
+						""".formatted(destinationName, targetUrl)))
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.name").value("local-hook"))
+			.andExpect(jsonPath("$.name").value(destinationName))
 			.andReturn();
 		String destinationId = JsonPath.read(destinationResult.getResponse().getContentAsString(), "$.id");
 

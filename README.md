@@ -97,10 +97,13 @@ Dispatch uses a DB outbox poller (`FOR UPDATE SKIP LOCKED`), exponential backoff
 cd dispatch-hub-api && ./mvnw verify
 
 # Web unit smoke
-cd dispatch-hub-web && npm test -- --run
+cd dispatch-hub-web && npm test -- --watch=false
+
+# Playwright UI smoke (Compose stack must be up on http://localhost:8080)
+cd dispatch-hub-web && npm run e2e
 ```
 
-CI runs the same API verify + web build on every PR. Playwright end-to-end against a full stack is documented as a follow-up (happy-path: login → event → attempt); not required in default CI.
+CI runs API verify + web build on every PR. Playwright is local/manual against Compose (login → destination → event SUCCESS; viewer cannot create destinations).
 
 ## Security notes
 
