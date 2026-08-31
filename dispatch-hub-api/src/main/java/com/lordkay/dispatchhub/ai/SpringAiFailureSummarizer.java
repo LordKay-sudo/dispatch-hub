@@ -49,11 +49,27 @@ public class SpringAiFailureSummarizer implements FailureSummarizer {
 			return new FailureSummary(draft.explanation().trim(), draft.suggestedAction().trim(), true, "openai");
 		}
 		catch (Exception ex) {
-			log.warn("OpenAI failure summary unavailable, using fallback", ex);
+			log.warn("OpenAI failure summary unavailable, using fallback: {}", ex.toString());
 			FailureSummary mock = fallback.summarize(context);
-			return new FailureSummary(mock.explanation() + " (AI provider unavailable; fallback used)",
+			return new FailureSummary(
+					mock.explanation() + " (AI provider unavailable: " + briefError(ex) + "; fallback used)",
 					mock.suggestedAction(), true, "openai-fallback");
 		}
+	}
+
+	private static String briefError(Throwable ex) {
+		Throwable root = ex;
+		while (root.getCause() != null && root.getCause() != root) {
+			root = root.getCause();
+		}
+		String message = root.getMessage();
+		if (message == null || message.isBlank()) {
+			return root.getClass().getSimpleName();
+		}
+		String cleaned = message.replaceAll("(?i)(sk-[a-zA-Z0-9_-]+|Bearer\\s+\\S+|api[_-]?key\\s*[:=]\\s*\\S+)",
+				"[redacted]");
+		String brief = root.getClass().getSimpleName() + ": " + cleaned;
+		return brief.length() <= 180 ? brief : brief.substring(0, 180) + "...";
 	}
 
 	private AiDraft parseDraft(String raw) {
