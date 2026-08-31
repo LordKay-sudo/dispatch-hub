@@ -1,12 +1,16 @@
 # Multi-stage build: reviewers run `docker compose up --build` with no local JDK.
+# BuildKit cache mounts keep ~/.m2 across rebuilds (DOCKER_BUILDKIT=1; default on Docker Desktop).
 FROM eclipse-temurin:25-jdk AS build
 WORKDIR /workspace
 COPY .mvn .mvn
 COPY mvnw pom.xml ./
 RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
+# Resolve deps when pom/wrapper change only; m2 cache survives even if this layer rebuilds.
+RUN --mount=type=cache,target=/root/.m2 \
+	./mvnw -B -DskipTests dependency:resolve dependency:resolve-plugins
 COPY src src
-# No -q: first build downloads a lot; quiet mode looks "stuck" in BuildKit.
-RUN ./mvnw -B -DskipTests package \
+RUN --mount=type=cache,target=/root/.m2 \
+	./mvnw -B -DskipTests package \
 	&& JAR=$(ls target/dispatch-hub-api-*.jar | grep -v '\.original$' | head -n1) \
 	&& cp "$JAR" /workspace/app.jar
 

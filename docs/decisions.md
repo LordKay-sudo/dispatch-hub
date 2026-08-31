@@ -99,3 +99,13 @@ Short records of choices that affect security, ops, or review. Implementation ma
 
 **Why:** Matches a realistic single-VPS layout. `SSRF_ALLOW_PRIVATE` is enabled only in Compose so Docker DNS / RFC1918 targets like `webhook-echo` work; production should keep private addresses denied.
 
+## ADR-010: BuildKit Maven cache for API image rebuilds
+
+**Status:** Accepted
+
+**Context:** Full `./mvnw package` inside Docker re-downloaded dependencies on every source change, making local iteration slow.
+
+**Decision:** API Dockerfile resolves dependencies in a pom-only layer, then packages after `COPY src`. Both Maven steps use `RUN --mount=type=cache,target=/root/.m2` so the local repository persists across builds.
+
+**Why:** Code-only rebuilds reuse downloaded artifacts; pom changes still refresh the dependency set.
+
