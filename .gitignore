@@ -16,6 +16,9 @@ dist/
 target/
 coverage/
 .angular/
+test-results/
+playwright-report/
+playwright/.cache/
 
 # IDE
 .idea/
