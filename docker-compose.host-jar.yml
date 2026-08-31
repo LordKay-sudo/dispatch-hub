@@ -1,0 +1,9 @@
+# Fast local API rebuilds: host Maven builds the JAR; Docker only copies it into a JRE image.
+# Usage:
+#   cd dispatch-hub-api && ./mvnw -DskipTests package
+#   docker compose -f docker-compose.yml -f docker-compose.host-jar.yml up -d --build api
+services:
+  api:
+    build:
+      context: ./dispatch-hub-api
+      dockerfile: Dockerfile.runtime
