@@ -1,5 +1,7 @@
 package com.lordkay.dispatchhub.ai;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -13,10 +15,12 @@ public class SpringAiFailureSummarizer implements FailureSummarizer {
 	private static final Logger log = LoggerFactory.getLogger(SpringAiFailureSummarizer.class);
 
 	private final ChatClient chatClient;
+	private final ObjectMapper objectMapper;
 	private final MockFailureSummarizer fallback = new MockFailureSummarizer();
 
-	public SpringAiFailureSummarizer(ChatClient.Builder chatClientBuilder) {
+	public SpringAiFailureSummarizer(ChatClient.Builder chatClientBuilder, ObjectMapper objectMapper) {
 		this.chatClient = chatClientBuilder.build();
+		this.objectMapper = objectMapper;
 	}
 
 	@Override
@@ -24,10 +28,10 @@ public class SpringAiFailureSummarizer implements FailureSummarizer {
 		try {
 			String prompt = """
 					You help operators diagnose webhook delivery failures.
-					Using only the sanitized metadata below, return two short paragraphs:
-					1) explanation
-					2) suggestedAction
-					Do not invent secrets or payload contents. Keep each under 280 characters.
+					Using only the sanitized metadata below, reply with a single JSON object and nothing else:
+					{"explanation":"...","suggestedAction":"..."}
+					Do not invent secrets or payload contents. Keep each string under 280 characters.
+					No markdown fences.
 
 					jobStatus=%s
 					attemptNumber=%d
@@ -37,8 +41,9 @@ public class SpringAiFailureSummarizer implements FailureSummarizer {
 					context.httpStatus() == null ? "null" : context.httpStatus().toString(),
 					sanitize(context.errorMessage()));
 
-			AiDraft draft = chatClient.prompt().user(prompt).call().entity(AiDraft.class);
-			if (draft == null || draft.explanation() == null || draft.suggestedAction() == null) {
+			String raw = chatClient.prompt().user(prompt).call().content();
+			AiDraft draft = parseDraft(raw);
+			if (draft == null || isBlank(draft.explanation()) || isBlank(draft.suggestedAction())) {
 				return fallback.summarize(context);
 			}
 			return new FailureSummary(draft.explanation().trim(), draft.suggestedAction().trim(), true, "openai");
@@ -49,6 +54,42 @@ public class SpringAiFailureSummarizer implements FailureSummarizer {
 			return new FailureSummary(mock.explanation() + " (AI provider unavailable; fallback used)",
 					mock.suggestedAction(), true, "openai-fallback");
 		}
+	}
+
+	private AiDraft parseDraft(String raw) throws Exception {
+		if (raw == null || raw.isBlank()) {
+			return null;
+		}
+		String json = extractJsonObject(raw.trim());
+		JsonNode node = objectMapper.readTree(json);
+		String explanation = text(node, "explanation");
+		String suggestedAction = text(node, "suggestedAction");
+		return new AiDraft(explanation, suggestedAction);
+	}
+
+	private static String extractJsonObject(String raw) {
+		if (raw.startsWith("```")) {
+			int start = raw.indexOf('{');
+			int end = raw.lastIndexOf('}');
+			if (start >= 0 && end > start) {
+				return raw.substring(start, end + 1);
+			}
+		}
+		int start = raw.indexOf('{');
+		int end = raw.lastIndexOf('}');
+		if (start >= 0 && end > start) {
+			return raw.substring(start, end + 1);
+		}
+		return raw;
+	}
+
+	private static String text(JsonNode node, String field) {
+		JsonNode value = node.get(field);
+		return value == null || value.isNull() ? null : value.asText();
+	}
+
+	private static boolean isBlank(String value) {
+		return value == null || value.isBlank();
 	}
 
 	private static String sanitize(String errorMessage) {

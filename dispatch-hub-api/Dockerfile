@@ -3,10 +3,10 @@ FROM eclipse-temurin:25-jdk AS build
 WORKDIR /workspace
 COPY .mvn .mvn
 COPY mvnw pom.xml ./
-RUN sed -i 's/\r$//' mvnw && chmod +x mvnw \
-	&& ./mvnw -B -q -DskipTests dependency:go-offline || true
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
 COPY src src
-RUN ./mvnw -B -q -DskipTests package \
+# No -q: first build downloads a lot; quiet mode looks "stuck" in BuildKit.
+RUN ./mvnw -B -DskipTests package \
 	&& JAR=$(ls target/dispatch-hub-api-*.jar | grep -v '\.original$' | head -n1) \
 	&& cp "$JAR" /workspace/app.jar
 
