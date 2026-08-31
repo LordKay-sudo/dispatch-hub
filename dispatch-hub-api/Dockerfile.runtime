@@ -1,0 +1,13 @@
+# Fast local path: build the JAR on the host (uses your local ~/.m2), then only package the runtime image.
+#   cd dispatch-hub-api && ./mvnw -DskipTests package
+#   docker compose -f docker-compose.yml -f docker-compose.host-jar.yml up -d --build api
+FROM eclipse-temurin:25-jre
+WORKDIR /app
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends curl \
+	&& rm -rf /var/lib/apt/lists/*
+COPY target/dispatch-hub-api-*.jar app.jar
+EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=5s --start-period=40s --retries=10 \
+	CMD curl -fsS http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"' || exit 1
+ENTRYPOINT ["java", "-jar", "app.jar"]

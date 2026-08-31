@@ -105,7 +105,7 @@ Short records of choices that affect security, ops, or review. Implementation ma
 
 **Context:** Full `./mvnw package` inside Docker re-downloaded dependencies on every source change, making local iteration slow.
 
-**Decision:** API Dockerfile resolves dependencies in a pom-only layer, then packages after `COPY src`. Both Maven steps use `RUN --mount=type=cache,target=/root/.m2` so the local repository persists across builds.
+**Decision:** API Dockerfile packages with a single `./mvnw … package` and `RUN --mount=type=cache,target=/root/.m2` so the local repository persists across builds. A separate `dependency:resolve` layer was dropped — it duplicated downloads and could exceed 30 minutes on slow networks. For local iteration, `docker-compose.host-jar.yml` + `Dockerfile.runtime` copy a host-built JAR into the JRE image (host `~/.m2`, seconds-level rebuilds).
 
-**Why:** Code-only rebuilds reuse downloaded artifacts; pom changes still refresh the dependency set.
+**Why:** Code-only rebuilds reuse downloaded artifacts; reviewers still get a one-command full image build. Host-jar path is the fast loop after the first local `mvnw package`.
 
