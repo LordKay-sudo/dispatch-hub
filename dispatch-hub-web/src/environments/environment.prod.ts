@@ -1,4 +1,5 @@
 ﻿export const environment = {
   production: true,
-  apiBaseUrl: '/api',
+  // Same-origin behind nginx (Compose web); requests go to /api/v1/...
+  apiBaseUrl: '',
 };

@@ -4,19 +4,21 @@ Dispatch Hub is a multi-tenant webhook dispatcher: tenants configure destination
 
 ```mermaid
 flowchart LR
-  UI[dispatch-hub-web]
+  UI[nginx + Angular]
   API[dispatch-hub-api]
   DB[(PostgreSQL)]
   Worker[Outbox worker]
-  Dest[Webhook destinations]
+  Echo[webhook-echo]
   AI[Failure summarizer]
 
-  UI --> API
+  UI -->|/api proxy| API
   API --> DB
   Worker --> DB
-  Worker --> Dest
+  Worker --> Echo
   API --> AI
 ```
+
+Compose publishes the UI on **:8080** and the API directly on **:8081**. Hybrid local runs can still use `ng serve` (:4200) against an API on :8080.
 
 ## Request path
 
