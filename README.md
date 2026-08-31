@@ -113,7 +113,7 @@ See [ADR-001](docs/decisions.md): global SSRF deny, then per-tenant egress allow
 
 - `X-Request-Id` on responses (generated if missing)
 - Micrometer counters: `dispatchhub.delivery.success|retry|dead|rate_limited`
-- Actuator `health`, `metrics`, `prometheus` (scrape on VPS; Grafana optional)
+- Actuator: `GET /actuator/health` (liveness), `GET /actuator/prometheus` (Prometheus scrape text; open in demo), `GET /actuator/metrics` (JSON; JWT required)
 
 ## Production readiness (short)
 
