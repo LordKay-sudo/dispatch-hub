@@ -1,12 +1,12 @@
 package com.lordkay.dispatchhub.ai;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @ConditionalOnProperty(name = "app.ai.provider", havingValue = "openai")
@@ -56,7 +56,7 @@ public class SpringAiFailureSummarizer implements FailureSummarizer {
 		}
 	}
 
-	private AiDraft parseDraft(String raw) throws Exception {
+	private AiDraft parseDraft(String raw) {
 		if (raw == null || raw.isBlank()) {
 			return null;
 		}
@@ -85,7 +85,7 @@ public class SpringAiFailureSummarizer implements FailureSummarizer {
 
 	private static String text(JsonNode node, String field) {
 		JsonNode value = node.get(field);
-		return value == null || value.isNull() ? null : value.asText();
+		return value == null || value.isNull() ? null : value.asString();
 	}
 
 	private static boolean isBlank(String value) {
