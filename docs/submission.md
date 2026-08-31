@@ -21,10 +21,12 @@ Confirm with the recruiting contact that the URL is reachable.
 
 ## Demo script (5–10 minutes)
 
-1. `docker compose up -d` then start API and web.
-2. Log in as `admin.acme` / `password` / `acme`.
-3. Create destination → submit event → show job moving to SUCCESS (or FAILED/DEAD with retry).
-4. Show AI summary on a failed/dead job (mock provider is fine).
-5. Show VIEWER cannot create destinations; cross-tenant access forbidden.
-6. Show Swagger UI and `./mvnw verify` (or CI green on the `submission` tag).
+1. `cp .env.example .env` then `docker compose up --build`.
+2. Open http://localhost:8080 — log in as `admin.acme` / `password` / `acme`.
+3. Create destination `http://webhook-echo:5678/` → submit event → show job SUCCESS.
+4. Show AI summary on a failed/dead job (mock provider is fine; force a bad URL or kill echo to demo failure).
+5. Show VIEWER cannot create destinations; cross-tenant access forbidden (switch to `admin.beta`).
+6. Show Swagger at http://localhost:8080/swagger-ui.html and CI green on the `submission` tag.
 7. Walk architecture: JWT tenant scope → outbox claim → SSRF → metrics.
+
+Hybrid alternative (no full image build): `docker compose up -d postgres`, then run API/web on the host (see README).

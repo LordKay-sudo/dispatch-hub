@@ -89,3 +89,13 @@ Short records of choices that affect security, ops, or review. Implementation ma
 
 **Why:** Keeps domain mapping on JPA while giving the poller an explicit Spring Data JDBC boundary. Separate `@EnableJpaRepositories` / `@EnableJdbcRepositories` base packages avoid dual scanning.
 
+## ADR-009: Full-stack Docker Compose for review demos
+
+**Status:** Accepted
+
+**Context:** Reviewers (and VPS-shaped demos) should exercise multi-tenancy without installing JDK/Node. Postgres-only Compose was not enough for a single-command demo.
+
+**Decision:** Default `docker-compose.yml` runs **postgres**, **api** (multi-stage Maven image), **web** (Angular production build behind nginx with same-origin `/api` proxy), and **webhook-echo** (in-compose delivery target). Hybrid host runs remain documented (`compose up postgres` + local processes).
+
+**Why:** Matches a realistic single-VPS layout. `SSRF_ALLOW_PRIVATE` is enabled only in Compose so Docker DNS / RFC1918 targets like `webhook-echo` work; production should keep private addresses denied.
+

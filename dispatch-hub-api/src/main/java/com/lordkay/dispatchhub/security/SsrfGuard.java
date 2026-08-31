@@ -14,9 +14,13 @@ import org.springframework.stereotype.Component;
 public class SsrfGuard {
 
 	private final boolean allowLoopback;
+	private final boolean allowPrivate;
 
-	public SsrfGuard(@Value("${app.security.ssrf.allow-loopback:true}") boolean allowLoopback) {
+	public SsrfGuard(
+			@Value("${app.security.ssrf.allow-loopback:true}") boolean allowLoopback,
+			@Value("${app.security.ssrf.allow-private:false}") boolean allowPrivate) {
 		this.allowLoopback = allowLoopback;
+		this.allowPrivate = allowPrivate;
 	}
 
 	public URI requireSafeHttpUri(String raw) {
@@ -78,7 +82,7 @@ public class SsrfGuard {
 			return !allowLoopback;
 		}
 		if (address.isSiteLocalAddress()) {
-			return true;
+			return !allowPrivate;
 		}
 		return false;
 	}
