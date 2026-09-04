@@ -26,6 +26,13 @@ Requires Docker Desktop (or compatible Compose).
    docker compose up --build
    ```
 
+   If the API container exits with `Invalid or corrupt jarfile`, rebuild without cache:
+
+   ```bash
+   docker compose build --no-cache api
+   docker compose up -d
+   ```
+
 3. Open the UI at **http://localhost:8080** (nginx → Angular; `/api` proxied to the API).
 
 | Link | URL |
