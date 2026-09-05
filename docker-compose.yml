@@ -1,8 +1,11 @@
-﻿services:
+services:
   postgres:
     image: postgres:16
+    # Loopback only — do not publish DB on 0.0.0.0 (LAN/public exposure).
+    # Default host port 5432; set POSTGRES_HOST_PORT=5433 (etc.) if the host
+    # already runs Postgres. API containers still use postgres:5432 on the network.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-dispatch}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
@@ -25,8 +28,9 @@
   api:
     build:
       context: ./dispatch-hub-api
+    # Host access for debugging only; UI reaches API via nginx same-origin proxy.
     ports:
-      - "8081:8080"
+      - "127.0.0.1:8081:8080"
     env_file:
       - path: .env
         required: false
@@ -53,7 +57,7 @@
     build:
       context: ./dispatch-hub-web
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
     depends_on:
       api:
         condition: service_healthy

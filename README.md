@@ -116,6 +116,8 @@ CI runs API verify + web build on every PR. Playwright is local/manual against C
 
 See [ADR-001](docs/decisions.md): global SSRF deny, then per-tenant egress allowlist. Demo allowlists include `localhost` / `127.0.0.1` / `webhook-echo`. Never commit secrets.
 
+Compose publishes UI (`8080`), API (`8081`), and Postgres (`5432`) bound to **loopback only** (`127.0.0.1:HOST:CONTAINER`). Bare `HOST:CONTAINER` publishes on `0.0.0.0` and can expose the stack on the LAN. `webhook-echo` stays Compose-internal (`expose` only; no host publish). If host `:5432` is already in use, set `POSTGRES_HOST_PORT=5433` in `.env` (Compose still uses `postgres:5432` between containers).
+
 ## Observability
 
 - `X-Request-Id` on responses (generated if missing)
