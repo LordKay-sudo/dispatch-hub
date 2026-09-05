@@ -18,7 +18,7 @@ flowchart LR
   API --> AI
 ```
 
-Compose publishes the UI on **:8080** and the API directly on **:8081**. Hybrid local runs can still use `ng serve` (:4200) against an API on :8080.
+Compose publishes the UI on **`127.0.0.1:8080`**, the API on **`127.0.0.1:8081`**, and Postgres on **`127.0.0.1:5432`** (loopback only — not `0.0.0.0`). Hybrid local runs can still use `ng serve` (:4200) against an API on :8080.
 
 ## Request path
 
